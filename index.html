@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student ID Card Generator</title>
+
+    <!-- SheetJS (Excel) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <!-- docx (Word generation) -->
+    <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+    <!-- FileSaver -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-color: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --border-color: #334155;
+            --input-bg: #0f172a;
+            --success-color: #4ade80;
+            --error-color: #f87171;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-color: #0f172a;
+            --text-muted: #64748b;
+            --accent-color: #0284c7;
+            --accent-hover: #0369a1;
+            --border-color: #cbd5e1;
+            --input-bg: #f8fafc;
+            --success-color: #22c55e;
+            --error-color: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            width: 450px;
+            text-align: center;
+            position: relative;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: background 0.2s;
+            width: auto;
+            margin: 0;
+        }
+        .theme-toggle:hover {
+            background-color: var(--border-color);
+        }
+
+        h2 {
+            margin-top: 10px;
+            margin-bottom: 8px;
+            color: var(--accent-color);
+            font-size: 24px;
+        }
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-color);
+            font-size: 14px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s, background-color 0.3s, color 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: var(--accent-color);
+        }
+        input[type="text"]::placeholder {
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+        .file-drop-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            position: relative;
+            background-color: var(--input-bg);
+        }
+        .file-drop-area:hover,
+        .file-drop-area.dragover {
+            border-color: var(--accent-color);
+        }
+        .file-drop-area input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-msg {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: #ffffff;
+            border: none;
+            padding: 12px 20px;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            margin-top: 10px;
+            display: inline-block;
+            text-align: center;
+            text-decoration: none;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--accent-hover);
+        }
+        .btn-primary:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-success {
+            background-color: var(--success-color);
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            margin-top: 10px;
+            display: inline-block;
+            text-align: center;
+            text-decoration: none;
+        }
+        .btn-success:hover {
+            background-color: #16a34a;
+        }
+        .btn-success:active {
+            transform: scale(0.98);
+        }
+        .info-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 15px;
+            text-align: left;
+        }
+        .info-text code {
+            background: var(--input-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        .divider {
+            border-top: 1px solid var(--border-color);
+            margin: 20px 0;
+        }
+        .sample-section {
+            margin-top: 10px;
+        }
+        .status {
+            margin-top: 15px;
+            font-size: 13px;
+            min-height: 20px;
+        }
+        .status.error {
+            color: var(--error-color);
+        }
+        .status.success {
+            color: var(--success-color);
+        }
+        .status.info {
+            color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="theme-toggle" id="themeToggleBtn">☀️ Light</button>
+        
+        <h2>🪪 ID Card Generator</h2>
+        <p class="subtitle">A4 Landscape • 6 Cards/Page • Scissor-Ready Grid</p>
+        
+        <form id="cardForm">
+            <div class="form-group">
+                <label for="header_note">Header Note (Appears in Top Right)</label>
+                <input type="text" id="header_note" name="header_note" value="" placeholder="e.g.,  street address, school name, etc.">
+            </div>
+            
+            <div class="form-group">
+                <label>Excel File (.xlsx)</label>
+                <div class="file-drop-area" id="dropArea">
+                    <span class="file-msg" id="fileName">📂 Drag & drop file or browse</span>
+                    <input type="file" name="file" accept=".xlsx,.xls" id="fileInput" required>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-primary" id="generateBtn">Generate & Download Word File</button>
+        </form>
+        
+        <div class="status" id="status"></div>
+        
+        <div class="divider"></div>
+        
+        <div class="sample-section">
+            <button type="button" class="btn-success" id="downloadTemplateBtn">📥 Download Blank Excel Template</button>
+        </div>
+        
+        <div class="info-text">
+            <strong>📌 Required Excel columns:</strong><br>
+            <code>Child Name</code> and <code>Child ID</code><br><br>
+            <strong>💡 Tip:</strong> Download the blank template and fill in your data.<br>
+            <strong>🔒 Privacy:</strong> Everything runs in your browser — no data is uploaded.
+        </div>
+    </div>
+
+    <script>
+        // ========== Theme Toggle ==========
+        const toggleBtn = document.getElementById('themeToggleBtn');
+        const htmlElement = document.documentElement;
+
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        if (currentTheme === 'light') {
+            htmlElement.setAttribute('data-theme', 'light');
+            toggleBtn.textContent = '🌙 Dark';
+        } else {
+            htmlElement.removeAttribute('data-theme');
+            toggleBtn.textContent = '☀️ Light';
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            if (htmlElement.getAttribute('data-theme') === 'light') {
+                htmlElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'dark');
+                toggleBtn.textContent = '☀️ Light';
+            } else {
+                htmlElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+                toggleBtn.textContent = '🌙 Dark';
+            }
+        });
+
+        // ========== File Input UI ==========
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const dropArea = document.getElementById('dropArea');
+        const statusEl = document.getElementById('status');
+        const generateBtn = document.getElementById('generateBtn');
+
+        function setStatus(msg, type = 'info') {
+            statusEl.textContent = msg;
+            statusEl.className = 'status ' + type;
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileName.textContent = "✅ " + e.target.files[0].name;
+                fileName.style.color = "var(--accent-color)";
+                setStatus('');
+            }
+        });
+
+        // Drag & drop visual feedback
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropArea.classList.add('dragover');
+            });
+        });
+        ['dragleave', 'drop'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropArea.classList.remove('dragover');
+            });
+        });
+        dropArea.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileName.textContent = "✅ " + files[0].name;
+                fileName.style.color = "var(--accent-color)";
+                setStatus('');
+            }
+        });
+
+        // ========== Download Blank Excel Template ==========
+        document.getElementById('downloadTemplateBtn').addEventListener('click', () => {
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet([
+                ['Child Name', 'Child ID'],
+                ['', '']
+            ]);
+            // Set column widths
+            ws['!cols'] = [{ wch: 25 }, { wch: 20 }];
+            XLSX.utils.book_append_sheet(wb, ws, 'Students');
+            XLSX.writeFile(wb, 'Blank_Student_Template.xlsx');
+            setStatus('Template downloaded!', 'success');
+        });
+
+        // ========== Generate Word Document ==========
+        document.getElementById('cardForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const file = fileInput.files[0];
+            if (!file) {
+                setStatus('Please select an Excel file.', 'error');
+                return;
+            }
+
+            const headerNote = document.getElementById('header_note').value.trim();
+
+            generateBtn.disabled = true;
+            setStatus('Reading Excel file...', 'info');
+
+            try {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+
+                // Validate columns
+                if (rows.length === 0) {
+                    throw new Error('The Excel file appears to be empty. Please add student data.');
+                }
+
+                const firstRow = rows[0];
+                const hasName = 'Child Name' in firstRow;
+                const hasId = 'Child ID' in firstRow;
+
+                if (!hasName || !hasId) {
+                    const missing = [];
+                    if (!hasName) missing.push('Child Name');
+                    if (!hasId) missing.push('Child ID');
+                    throw new Error('Missing required columns: ' + missing.join(', '));
+                }
+
+                // Filter empty rows
+                const records = rows.filter(r => {
+                    const name = String(r['Child Name'] || '').trim();
+                    const id = String(r['Child ID'] || '').trim();
+                    return name !== '' || id !== '';
+                });
+
+                if (records.length === 0) {
+                    throw new Error('No valid student data found. Please fill in Child Name and/or Child ID.');
+                }
+
+                setStatus(`Found ${records.length} student(s). Generating Word document...`, 'info');
+
+                await generateDocx(records, headerNote);
+
+                setStatus(`✅ Successfully generated cards for ${records.length} student(s)!`, 'success');
+            } catch (err) {
+                console.error(err);
+                setStatus('Error: ' + err.message, 'error');
+            } finally {
+                generateBtn.disabled = false;
+            }
+        });
+
+        // ========== Core DOCX Generation (matches original layout) ==========
+        async function generateDocx(records, headerNote) {
+            const {
+                Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+                BorderStyle, WidthType, AlignmentType, VerticalAlign,
+                Header, Footer, PageNumber, convertInchesToTwip, TableLayoutType, PageOrientation
+            } = docx;
+
+            // Units: 1 cm ≈ 567 twips
+            const cm = (n) => Math.round(n * 567);
+
+            // Border styles matching original (sz is in 1/8 pt)
+            const SINGLE = { style: BorderStyle.SINGLE, size: 12, color: "000000" };
+            const DOUBLE = { style: BorderStyle.DOUBLE, size: 12, color: "000000" };
+            const THIN   = { style: BorderStyle.SINGLE, size: 4,  color: "000000" };
+
+            // Row heights (original: name 0.65cm, id 0.65cm, blank 7.0cm)
+            const nameH  = cm(0.65);
+            const idH    = cm(0.65);
+            const blankH = cm(7.0);
+
+            // Column width ~9.3 cm (small safety margin vs page width)
+            const colW = cm(9.3);
+
+            // Chunk into pages of 6
+            const chunks = [];
+            for (let i = 0; i < records.length; i += 6) {
+                chunks.push(records.slice(i, i + 6));
+            }
+
+            const sections = chunks.map((chunk, pageIdx) => {
+                const numCards = chunk.length;
+
+                // Build 6 rows × 3 cols table
+                // Structure: rows 0=name, 1=id, 2=blank  |  rows 3=name, 4=id, 5=blank
+                const tableRows = [];
+
+                for (let r = 0; r < 6; r++) {
+                    const cells = [];
+                    const isNameRow  = (r % 3 === 0);
+                    const isIdRow    = (r % 3 === 1);
+                    const isBlankRow = (r % 3 === 2);
+                    const cardRowIdx = Math.floor(r / 3); // 0 or 1
+
+                    for (let c = 0; c < 3; c++) {
+                        const cardIdx = cardRowIdx * 3 + c; // 0..5
+                        let textContent = '';
+
+                        if (cardIdx < numCards) {
+                            const rec = chunk[cardIdx];
+                            const childName = String(rec['Child Name'] || '').trim();
+                            const childId   = String(rec['Child ID'] || '').trim();
+                            if (isNameRow) textContent = `Child Name: ${childName}`;
+                            else if (isIdRow) textContent = `Child ID: ${childId}`;
+                        } else {
+                            if (isNameRow) textContent = 'Child Name:';
+                            else if (isIdRow) textContent = 'Child ID:';
+                        }
+
+                        // Borders (same logic as original Python)
+                        let topB, bottomB, leftB, rightB;
+
+                        // Vertical
+                        if (c === 0) {
+                            leftB = SINGLE; rightB = DOUBLE;
+                        } else if (c === 1) {
+                            leftB = DOUBLE; rightB = DOUBLE;
+                        } else {
+                            leftB = DOUBLE; rightB = SINGLE;
+                        }
+
+                        // Horizontal
+                        if (r === 0) {
+                            topB = SINGLE; bottomB = THIN;
+                        } else if (r === 1) {
+                            topB = THIN; bottomB = THIN;
+                        } else if (r === 2) {
+                            topB = THIN; bottomB = DOUBLE; // strong cut line between card rows
+                        } else if (r === 3) {
+                            topB = DOUBLE; bottomB = THIN;
+                        } else if (r === 4) {
+                            topB = THIN; bottomB = THIN;
+                        } else {
+                            topB = THIN; bottomB = SINGLE;
+                        }
+
+                        const cellChildren = [];
+                        if (textContent) {
+                            cellChildren.push(new Paragraph({
+                                alignment: AlignmentType.LEFT,
+                                spacing: { before: 20, after: 0 },
+                                indent: { left: cm(0.12) },
+                                children: [
+                                    new TextRun({
+                                        text: textContent,
+                                        font: "Aptos",
+                                        size: 20 // 10pt
+                                    })
+                                ]
+                            }));
+                        } else {
+                            // empty paragraph for blank cells
+                            cellChildren.push(new Paragraph({ children: [] }));
+                        }
+
+                        cells.push(new TableCell({
+                            width: { size: colW, type: WidthType.DXA },
+                            borders: {
+                                top: topB,
+                                bottom: bottomB,
+                                left: leftB,
+                                right: rightB
+                            },
+                            verticalAlign: VerticalAlign.CENTER,
+                            children: cellChildren
+                        }));
+                    }
+
+                    // Row height
+                    let rowHeight = blankH;
+                    if (isNameRow) rowHeight = nameH;
+                    else if (isIdRow) rowHeight = idH;
+
+                    tableRows.push(new TableRow({
+                        height: { value: rowHeight, rule: "exact" },
+                        children: cells
+                    }));
+                }
+
+                const table = new Table({
+                    width: { size: colW * 3, type: WidthType.DXA },
+                    columnWidths: [colW, colW, colW],
+                    layout: TableLayoutType.FIXED,
+                    indent: { size: 0, type: WidthType.DXA },
+                    rows: tableRows
+                });
+
+                // Header
+                const headerChildren = [];
+                if (headerNote) {
+                    headerChildren.push(new Paragraph({
+                        alignment: AlignmentType.RIGHT,
+                        children: [
+                            new TextRun({
+                                text: `Note: ${headerNote}`,
+                                font: "Aptos",
+                                size: 20,
+                                bold: true
+                            })
+                        ]
+                    }));
+                } else {
+                    headerChildren.push(new Paragraph({ children: [] }));
+                }
+
+                // Footer with page number
+                const footerChildren = [
+                    new Paragraph({
+                        alignment: AlignmentType.RIGHT,
+                        children: [
+                            new TextRun({ text: "Page ", font: "Aptos", size: 18 }),
+                            new TextRun({ children: [PageNumber.CURRENT], font: "Aptos", size: 18 })
+                        ]
+                    })
+                ];
+
+                return {
+                    properties: {
+                        page: {
+                            size: {
+                                // A4, swapped to Landscape by the orientation flag below
+                                width: cm(21.0),
+                                height: cm(29.7),
+                                orientation: PageOrientation.LANDSCAPE
+                            },
+                            margin: {
+                                top: cm(0.4),
+                                bottom: cm(0.5),
+                                left: cm(0.6),
+                                right: cm(0.6)
+                            }
+                        }
+                    },
+                    headers: {
+                        default: new Header({ children: headerChildren })
+                    },
+                    footers: {
+                        default: new Footer({ children: footerChildren })
+                    },
+                    children: [table]
+                };
+            });
+
+            const doc = new Document({
+                styles: {
+                    default: {
+                        document: {
+                            styles: [{
+                                id: "Normal",
+                                name: "Normal",
+                                run: { font: "Aptos", size: 22 }
+                            }]
+                        }
+                    }
+                },
+                sections: sections
+            });
+
+            const blob = await Packer.toBlob(doc);
+            const timestamp = new Date().toISOString().slice(0,19).replace(/[-:T]/g, match => match === 'T' ? '_' : '');
+            saveAs(blob, `Student_Cards_${timestamp}.docx`);
+        }
+    </script>
+</body>
+</html>
