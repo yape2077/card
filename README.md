@@ -31,6 +31,3 @@ The uploaded file (`.xlsx` or `.xls`) must contain these exact column names in t
 ## 👤 Credits
 
 Created and maintained by [@yape2077](https://github.com/yape2077).
-## 👤 Credits
-
-Created and maintained by [@yape2077](https://github.com/yape2077).
